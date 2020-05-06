@@ -44,15 +44,6 @@ func (gs *GameState) AllCards() []Card {
 	return allCards
 }
 
-func parseGameStateFromJson(str string) (GameState, error) {
-	gameState := GameState{}
-	if err := json.Unmarshal([]byte(str), &gameState); err != nil {
-		return GameState{}, err
-	}
-
-	return gameState, nil
-}
-
 func (gameState *GameState) IsValid() (bool, error) {
 	// MyHand
 	if !gameState.MyHand.IsValid() {
@@ -74,6 +65,12 @@ func (gameState *GameState) IsValid() (bool, error) {
 	}
 
 	// Pull
+	if len(gameState.Pull) != 0 && len(gameState.Pull) != 3 {
+		return false,
+			&OfcError{"Pull length must be 0 or 3!"}
+
+	}
+
 	for _, coord := range gameState.Pull {
 		if coord.X < 0 || coord.Y < 0 {
 			return false,
@@ -97,10 +94,23 @@ func (gameState *GameState) IsValid() (bool, error) {
 	return true, nil
 }
 
-func StateChanged(gsNew, gsOld GameState) bool {
+func parseGameStateFromJson(str string) (*GameState, error) {
+	gameState := GameState{}
+	if err := json.Unmarshal([]byte(str), &gameState); err != nil {
+		return nil, err
+	}
+
+	if valid, err := gameState.IsValid(); !valid {
+		return nil, err
+	}
+
+	return &gameState, nil
+}
+
+func StateChanged(gsNew, gsOld *GameState) bool {
 	return !reflect.DeepEqual(gsNew, gsOld) // FIXME: apparently this is bad
 }
 
-func DecisionRequired(gs GameState) bool {
+func (gs *GameState) DecisionRequired() bool {
 	return len(gs.Pull) > 0
 }
