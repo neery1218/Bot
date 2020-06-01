@@ -14,15 +14,10 @@ func (e *OfcError) Error() string {
 	return fmt.Sprintf("OfcError: %s", e.Msg)
 }
 
-type Coord struct {
-	X int
-	Y int
-}
-
 type GameState struct {
 	MyHand     Hand
-	OtherHands []Hand         // must be length 1 or 2
-	Pull       map[Card]Coord // 0 <= len(Pull) <= 3
+	OtherHands []Hand // must be length 1 or 2
+	Pull       []Card // 0 <= len(Pull) <= 3
 	DeadCards  []Card
 }
 
@@ -35,9 +30,8 @@ func (gs *GameState) AllCards() []Card {
 		allCards = append(allCards, otherHand.Cards()...)
 	}
 
-	for card := range gs.Pull {
+	for _, card := range gs.Pull {
 		allCards = append(allCards, card)
-
 	}
 
 	allCards = append(allCards, gs.DeadCards...)
@@ -71,13 +65,6 @@ func (gameState *GameState) IsValid() (bool, error) {
 
 	}
 
-	for _, coord := range gameState.Pull {
-		if coord.X < 0 || coord.Y < 0 {
-			return false,
-				&OfcError{"Coordinates have to be >= 0!"}
-		}
-	}
-
 	// check all cards for uniqueness, validity
 	uniqueCards := make(map[Card]bool)
 	for _, c := range gameState.AllCards() {
@@ -99,6 +86,7 @@ func parseGameStateFromJson(str string) (*GameState, error) {
 	if err := json.Unmarshal([]byte(str), &gameState); err != nil {
 		return nil, err
 	}
+	fmt.Println(gameState)
 
 	if valid, err := gameState.IsValid(); !valid {
 		return nil, err

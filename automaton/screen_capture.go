@@ -2,22 +2,17 @@ package automaton
 
 import (
 	"fmt"
-	"github.com/JamesHovious/w32"
 	"image/color"
 	"unsafe"
+
+	"github.com/JamesHovious/w32"
 )
 
-func ScreenCapture(appName string) Bitmap {
+func ScreenCapture(hwnd w32.HWND) Bitmap {
 
-	// get handle to window
-	hwnd := w32.FindWindowS(&appName, nil)
-	fmt.Println(hwnd)
 	// get relative coordinates of window (used to compute size)
 	rect := w32.GetClientRect(hwnd)
 	// fmt.Printf("left right top down %v %v %v %v\n", rect.Left, rect.Right, rect.Top, rect.Bottom)
-	if hwnd == 0 {
-		panic(fmt.Sprintf("Can't find %v! Are you sure it's open!", appName))
-	}
 
 	// dc = device context. idk what these are for
 	hdcScreen := w32.GetDC(hwnd)
@@ -28,7 +23,6 @@ func ScreenCapture(appName string) Bitmap {
 	w32.SelectObject(hdc, w32.HGDIOBJ(hbmp))
 	PrintWindow(hwnd, hdc) // write bitmap of hwnd to the memory pointed to by hdc
 	// hbmp isn't readable by us yet, not sure why it's implemented this way.
-
 
 	// use hbmp to make a system call to figure out dims of bitmap. (height, width)
 	var dib w32.DIBSECTION
@@ -88,9 +82,9 @@ func ScreenCapture(appName string) Bitmap {
 	head := uintptr(memptr)
 	for i := uint32(0); i < bmpInfo.BmiHeader.BiSizeImage; i += 4 {
 		// r g b a
-		r := *(*uint8)(unsafe.Pointer(head))
+		b := *(*uint8)(unsafe.Pointer(head))
 		g := *(*uint8)(unsafe.Pointer(head + 1))
-		b := *(*uint8)(unsafe.Pointer(head + 2))
+		r := *(*uint8)(unsafe.Pointer(head + 2))
 		a := *(*uint8)(unsafe.Pointer(head + 3))
 
 		row := (i / 4) / uint32(bmpInfo.BmiHeader.BiWidth)

@@ -1,7 +1,15 @@
 package ofc
 
-type Card string
+type Coord struct {
+	X int
+	Y int
+}
+
+type Card struct {
+	Val   string
+	Coord Coord
+}
 
 func (c Card) IsValid() bool {
-	return len(string(c)) == 2
+	return len(string(c.Val)) == 2
 }

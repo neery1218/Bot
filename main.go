@@ -2,24 +2,16 @@ package main
 
 import (
 	"automaton/automaton"
-	"os"
-
-	"golang.org/x/image/bmp"
+	"automaton/ofc"
+	"fmt"
 )
 
 func main() {
 
-	// Notepad has to be open or this won't work.
-	appName := "Notepad"
-	img := automaton.ScreenCapture(appName)
-	f, err := os.Create("notepad.bmp")
-	if err != nil {
-		panic(err)
-	}
-	bmp.Encode(f, &img) // *Bitmap implements Image, not Bitmap!
+	gCtxt := ofc.GameContext{
+		Hwnd: automaton.FindWindow("MEmu"),
+		Host: "http://localhost:8000"}
 
-	automaton.MoveMouse(appName, 10, 11)
-	automaton.ClickDown(appName)
-	automaton.MoveMouse(appName, 20, 11)
-	// automaton.ClickUp(appName)
+	gs := ofc.CaptureGameState(gCtxt)
+	fmt.Println(gs)
 }

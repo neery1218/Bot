@@ -76,3 +76,12 @@ func GetAllTopWindows() map[string]w32.HWND {
 
 	return m
 }
+
+func FindWindow(appName string) w32.HWND {
+	for name, hwnd := range GetAllTopWindows() {
+		if name == appName {
+			return hwnd
+		}
+	}
+	return 0
+}
