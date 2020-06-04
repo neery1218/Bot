@@ -36,8 +36,9 @@ func CaptureGameState(ctxt GameContext) *GameState {
 	}
 	q := u.Query()
 	q.Set("filename", filename)
+	q.Set("config", "MEMU_536x983")
 	u.RawQuery = q.Encode()
-	fmt.Println("constructed url: %v", u)
+	fmt.Printf("constructed url: %v\n", u)
 
 	res, err := http.Get(u.String())
 	if err != nil {

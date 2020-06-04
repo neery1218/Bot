@@ -36,7 +36,6 @@ func TestValidGameState(t *testing.T) {
 			{"Val" : "9h", "Coord" : { "X" : 90, "Y": 30 }}
 		]
 	}`
-
 	gs, err := parseGameStateFromJson(str)
 	assert.Nil(t, err)
 	assert.Equal(t, gs.MyHand.Top[0], Card{"Ah", Coord{20, 30}})
