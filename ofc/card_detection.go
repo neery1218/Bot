@@ -13,47 +13,66 @@ import (
 )
 
 type GameContext struct {
-	Hwnd w32.HWND
-	Host string
+	Hwnd             w32.HWND // memu handle
+	ImageServerHost  string
+	SolverServerHost string
+	ScreenShotDir    string // store screenshots here
 }
 
-func CaptureGameState(ctxt GameContext) *GameState {
+func (gCtxt *GameContext) CaptureGameState(imageName string) error {
 	// get screenshot
-	img := automaton.ScreenCapture(ctxt.Hwnd)
+	img := automaton.ScreenCapture(gCtxt.Hwnd)
 
 	// save image to file
-	filename := "C:\\Users\\neera\\Documents\\screenshots\\tmp.bmp"
-	f, err := os.Create(filename)
+	f, err := os.Create(gCtxt.ScreenShotDir + "\\" + imageName + ".bmp")
 	if err != nil {
-		panic(err)
+		return err
 	}
-	bmp.Encode(f, &img) // *Bitmap implements Image, not Bitmap!
 
-	// call card detection server
-	u, err := url.Parse(ctxt.Host)
+	// save image to file
+	err = bmp.Encode(f, &img) // *Bitmap implements Image, not Bitmap!
 	if err != nil {
-		panic(err)
+		return err
 	}
+
+	return nil
+}
+
+func (gCtxt *GameContext) ParseGameStateFromImage(imageName string) (*GameState, error) {
+	u, err := url.Parse(gCtxt.ImageServerHost)
+	if err != nil {
+		return nil, err
+	}
+
+	// image server needs a filename parameter, and config parameter
 	q := u.Query()
-	q.Set("filename", filename)
+	q.Set("filename", gCtxt.ScreenShotDir+"\\"+imageName+".bmp")
 	q.Set("config", "MEMU_536x983")
 	u.RawQuery = q.Encode()
 	fmt.Printf("constructed url: %v\n", u)
 
 	res, err := http.Get(u.String())
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	gs, err := parseGameStateFromJson(string(body))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return gs
+	return gs, nil
+}
+
+func (gCtxt *GameContext) SolveGameState(gs *GameState) error {
+	return nil
+}
+
+func parseActions(actions string) {
+	// "3d bot Ad mid 3c bot Ah mid Qs top"
 }

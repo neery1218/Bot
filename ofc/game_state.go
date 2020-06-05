@@ -58,13 +58,6 @@ func (gameState *GameState) IsValid() (bool, error) {
 		}
 	}
 
-	// Pull
-	if len(gameState.Pull) != 0 && len(gameState.Pull) != 3 {
-		return false,
-			&OfcError{"Pull length must be 0 or 3!"}
-
-	}
-
 	// check all cards for uniqueness, validity
 	uniqueCards := make(map[Card]bool)
 	for _, c := range gameState.AllCards() {
