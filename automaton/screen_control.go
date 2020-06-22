@@ -4,16 +4,14 @@ import (
 	"github.com/JamesHovious/w32"
 )
 
-func MoveMouse(appName string, x, y int) {
-	hwnd := w32.FindWindowS(&appName, nil)
-
+func MoveMouse(hwnd w32.HWND, x, y int) {
 	// translate relative coordinates to screen coordinates
 	AbsX, AbsY := w32.ClientToScreen(hwnd, x, y)
 	w32.SetCursorPos(AbsX, AbsY)
 	return
 }
 
-func ClickDown(appName string) error {
+func ClickDown() error {
 	inputs := make([]w32.INPUT, 0)
 	inputs = append(
 		inputs,
@@ -33,7 +31,7 @@ func ClickDown(appName string) error {
 	return err
 }
 
-func ClickUp(appName string) error {
+func ClickUp() error {
 	inputs := make([]w32.INPUT, 0)
 	inputs = append(
 		inputs,

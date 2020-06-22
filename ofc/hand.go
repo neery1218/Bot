@@ -14,6 +14,10 @@ func (h *Hand) Cards() []Card {
 	return allCards
 }
 
+func (h *Hand) Empty() bool {
+	return len(h.Top) == 0 && len(h.Mid) == 0 && len(h.Bot) == 0
+}
+
 func (h *Hand) IsValid() bool {
 	// FIXME: check total hand size (must be one of 0,5,7,9,11,13)
 	return len(h.Top) <= 3 && len(h.Mid) <= 5 && len(h.Bot) <= 5

@@ -19,6 +19,7 @@ type GameState struct {
 	OtherHands []Hand // must be length 1 or 2
 	Pull       []Card // 0 <= len(Pull) <= 3
 	DeadCards  []Card
+	EmptyCards EmptyCards
 }
 
 func (gs *GameState) AllCards() []Card {
@@ -79,7 +80,7 @@ func parseGameStateFromJson(str string) (*GameState, error) {
 	if err := json.Unmarshal([]byte(str), &gameState); err != nil {
 		return nil, err
 	}
-	fmt.Println(gameState)
+	fmt.Printf("%+v\n", gameState)
 
 	if valid, err := gameState.IsValid(); !valid {
 		return nil, err

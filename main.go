@@ -13,7 +13,7 @@ func main() {
 	gCtxt := ofc.GameContext{
 		Hwnd:             automaton.FindWindow("MEmu"),
 		ImageServerHost:  "http://localhost:8000",
-		SolverServerHost: "http://localhost:8001",
+		SolverServerHost: "http://34.74.180.106:9001/eval",
 		ScreenShotDir:    "C:\\Users\\neera\\Documents\\screenshots"}
 
 	// screenshot id
@@ -29,10 +29,14 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("%+v\n", gs)
+	// fmt.Printf("%+v\n", gs)
 	if gs.DecisionRequired() {
 		fmt.Println("Action required! Calling Solver")
-		gCtxt.SolveGameState(gs)
+		actions, err := gCtxt.SolveGameState(gs)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("Pending actions: %+v", actions)
+		gCtxt.ExecuteActions(actions, gs)
 	}
-
 }
