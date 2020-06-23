@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -153,8 +154,8 @@ func formatCardArray(cards []Card) string {
 func parseActions(actionString string, gs *GameState) ([]Action, error) {
 	// "3d bot Ad mid 3c bot Ah mid Qs top"
 	tokens := strings.Split(actionString, " ")
-	if len(tokens) != 4 && len(tokens) != 10 {
-		return nil, &OfcError{"Actions string doesn't have 2 actions!"}
+	if len(tokens)%2 != 0 {
+		return nil, &OfcError{"Actions string doesn't have an even number of actions!"}
 	}
 
 	actions := make([]Action, 0)
@@ -188,13 +189,16 @@ func parseAction(card string, position string, gs *GameState) Action {
 }
 
 func (gCtxt *GameContext) ExecuteActions(actions []Action, gs *GameState) error {
-	// assume mouse lock (todo: implement mouse lock)
+
+	// special case: Fantasy. If fantasy, every time we take a card, the other card
+	// positions change. So after every executed action, we have to re-identify the card positions.
+
 	// find an empty card slot, and drag the card there
 	topCounter := 0
 	midCounter := 0
 	botCounter := 0
 	for _, action := range actions {
-		fmt.Printf("Executing action: %+v\n", action)
+		fmt.Printf("\nExecuting action: %+v\n", action)
 
 		// find empty card slot in specified position
 		var slotCoords Coord
@@ -213,7 +217,14 @@ func (gCtxt *GameContext) ExecuteActions(actions []Action, gs *GameState) error 
 		}
 
 		fmt.Printf("Found slot %+v\n", slotCoords)
-		automaton.MoveMouse(gCtxt.Hwnd, action.Card.Coord.X, action.Card.Coord.Y)
+
+		cardCoord, err := gCtxt.findCardCoord(action, gs, len(actions) >= 13)
+		if err != nil {
+			return err
+		}
+
+		automaton.MoveMouse(gCtxt.Hwnd, cardCoord.X, cardCoord.Y)
+
 		automaton.ClickDown()
 		automaton.MoveMouse(gCtxt.Hwnd, slotCoords.X, slotCoords.Y)
 		automaton.ClickUp()
@@ -224,4 +235,29 @@ func (gCtxt *GameContext) ExecuteActions(actions []Action, gs *GameState) error 
 	}
 
 	return nil
+}
+
+func (gCtxt *GameContext) findCardCoord(action Action, gs *GameState, isFantasy bool) (*Coord, error) {
+	if !isFantasy {
+		return &action.Card.Coord, nil
+	}
+	fmt.Println("Fantasy!")
+	timeString := strconv.Itoa(int(time.Now().Unix()))
+	err := gCtxt.CaptureGameState(timeString)
+	if err != nil {
+		return nil, err
+	}
+	newGs, err := gCtxt.ParseGameStateFromImage(timeString)
+	if err != nil {
+		return nil, err
+	}
+
+	// find the new card in newGs, return that coord
+	for _, c := range newGs.Pull {
+		if action.Card.Val == c.Val {
+			return &c.Coord, nil
+		}
+	}
+
+	return nil, &OfcError{"Couldn't find new card in image tmp"}
 }
