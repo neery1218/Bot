@@ -20,6 +20,7 @@ type GameState struct {
 	Pull       []Card // 0 <= len(Pull) <= 3
 	DeadCards  []Card
 	EmptyCards EmptyCards
+	GameType   string // one of regular, progressive, ultimate
 }
 
 func (gs *GameState) AllCards() []Card {
@@ -80,7 +81,7 @@ func parseGameStateFromJson(str string) (*GameState, error) {
 	if err := json.Unmarshal([]byte(str), &gameState); err != nil {
 		return nil, err
 	}
-	fmt.Printf("%+v\n", gameState)
+	fmt.Printf("\n %+v \n", gameState)
 
 	if valid, err := gameState.IsValid(); !valid {
 		return nil, err

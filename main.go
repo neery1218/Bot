@@ -3,12 +3,13 @@ package main
 import (
 	"automaton/automaton"
 	"automaton/ofc"
-	"fmt"
+	"log"
 	"strconv"
 	"time"
 )
 
 func main() {
+	log.Printf("Starting Bot\n")
 
 	gCtxt := ofc.GameContext{
 		Hwnd:             automaton.FindWindow("MEmu"),
@@ -31,12 +32,12 @@ func main() {
 
 	// fmt.Printf("%+v\n", gs)
 	if gs.DecisionRequired() {
-		fmt.Println("Action required! Calling Solver")
+		log.Println("Action required! Calling Solver")
 		actions, err := gCtxt.SolveGameState(gs)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("Pending actions: %+v", actions)
+		log.Printf("Pending actions for timeString %v: %+v", timeString, actions)
 		gCtxt.ExecuteActions(actions, gs)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -88,7 +89,7 @@ func (gCtxt *GameContext) SolveGameState(gs *GameState) ([]Action, error) {
 
 	// build query for the OfcSolver
 	q := u.Query()
-	q.Set("type", "regular") // FIXME: add type to card detection server
+	q.Set("type", "progressive")
 	fmt.Println(formatHand(&gs.MyHand))
 	q.Set("my_hand", formatHand(&gs.MyHand))
 
@@ -97,7 +98,7 @@ func (gCtxt *GameContext) SolveGameState(gs *GameState) ([]Action, error) {
 			q.Add("other_hand", formatHand(&otherHand))
 		}
 	}
-	q.Set("n_solves", "1000")
+	q.Set("n_solves", "700")
 	q.Set("n_decision_solves", "25")
 	q.Set("pull", formatCardArray(gs.Pull))
 
@@ -189,16 +190,12 @@ func parseAction(card string, position string, gs *GameState) Action {
 }
 
 func (gCtxt *GameContext) ExecuteActions(actions []Action, gs *GameState) error {
-
-	// special case: Fantasy. If fantasy, every time we take a card, the other card
-	// positions change. So after every executed action, we have to re-identify the card positions.
-
 	// find an empty card slot, and drag the card there
 	topCounter := 0
 	midCounter := 0
 	botCounter := 0
 	for _, action := range actions {
-		fmt.Printf("\nExecuting action: %+v\n", action)
+		log.Printf("\nExecuting action: %+v\n", action)
 
 		// find empty card slot in specified position
 		var slotCoords Coord
@@ -216,7 +213,7 @@ func (gCtxt *GameContext) ExecuteActions(actions []Action, gs *GameState) error 
 			botCounter++
 		}
 
-		fmt.Printf("Found slot %+v\n", slotCoords)
+		// log.Printf("Found slot %+v\n", slotCoords)
 
 		cardCoord, err := gCtxt.findCardCoord(action, gs, len(actions) >= 13)
 		if err != nil {
@@ -224,14 +221,13 @@ func (gCtxt *GameContext) ExecuteActions(actions []Action, gs *GameState) error 
 		}
 
 		automaton.MoveMouse(gCtxt.Hwnd, cardCoord.X, cardCoord.Y)
-
+		time.Sleep(50 * time.Millisecond)
 		automaton.ClickDown()
+		time.Sleep(50 * time.Millisecond)
 		automaton.MoveMouse(gCtxt.Hwnd, slotCoords.X, slotCoords.Y)
+		time.Sleep(50 * time.Millisecond)
 		automaton.ClickUp()
-		time.Sleep(500 * time.Millisecond)
-
-		// drag slowly from action.Coord to slotCoord
-
+		time.Sleep(350 * time.Millisecond)
 	}
 
 	return nil
@@ -241,7 +237,10 @@ func (gCtxt *GameContext) findCardCoord(action Action, gs *GameState, isFantasy 
 	if !isFantasy {
 		return &action.Card.Coord, nil
 	}
-	fmt.Println("Fantasy!")
+
+	// special case: Fantasy. If fantasy, every time we take a card, the other card
+	// positions change. So after every executed action, we have to re-identify
+	// the card positions.
 	timeString := strconv.Itoa(int(time.Now().Unix()))
 	err := gCtxt.CaptureGameState(timeString)
 	if err != nil {
