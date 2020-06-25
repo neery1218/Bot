@@ -61,7 +61,7 @@ func (gCtxt *GameContext) ParseGameStateFromImage(imageName string) (*GameState,
 	q.Set("filename", gCtxt.ScreenShotDir+"\\"+imageName+".bmp")
 	q.Set("config", "MEMU_536x983")
 	u.RawQuery = q.Encode()
-	fmt.Printf("constructed url: %v\n", u)
+	// fmt.Printf("constructed url: %v\n", u)
 
 	res, err := http.Get(u.String())
 	if err != nil {
@@ -90,7 +90,7 @@ func (gCtxt *GameContext) SolveGameState(gs *GameState) ([]Action, error) {
 	// build query for the OfcSolver
 	q := u.Query()
 	q.Set("type", "progressive")
-	fmt.Println(formatHand(&gs.MyHand))
+	// fmt.Println(formatHand(&gs.MyHand))
 	q.Set("my_hand", formatHand(&gs.MyHand))
 
 	for _, otherHand := range gs.OtherHands {
@@ -107,7 +107,7 @@ func (gCtxt *GameContext) SolveGameState(gs *GameState) ([]Action, error) {
 	}
 
 	u.RawQuery = q.Encode()
-	fmt.Printf("constructed url: %v\n", u)
+	// fmt.Printf("constructed url: %v\n", u)
 
 	res, err := http.Get(u.String())
 	if err != nil {
@@ -221,13 +221,10 @@ func (gCtxt *GameContext) ExecuteActions(actions []Action, gs *GameState) error 
 		}
 
 		automaton.MoveMouse(gCtxt.Hwnd, cardCoord.X, cardCoord.Y)
-		time.Sleep(50 * time.Millisecond)
 		automaton.ClickDown()
-		time.Sleep(50 * time.Millisecond)
 		automaton.MoveMouse(gCtxt.Hwnd, slotCoords.X, slotCoords.Y)
-		time.Sleep(50 * time.Millisecond)
 		automaton.ClickUp()
-		time.Sleep(350 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 	}
 
 	return nil

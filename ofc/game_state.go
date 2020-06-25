@@ -15,12 +15,14 @@ func (e *OfcError) Error() string {
 }
 
 type GameState struct {
-	MyHand     Hand
-	OtherHands []Hand // must be length 1 or 2
-	Pull       []Card // 0 <= len(Pull) <= 3
-	DeadCards  []Card
-	EmptyCards EmptyCards
-	GameType   string // one of regular, progressive, ultimate
+	MyHand        Hand
+	OtherHands    []Hand // must be length 1 or 2
+	Pull          []Card // 0 <= len(Pull) <= 3
+	DeadCards     []Card
+	EmptyCards    EmptyCards
+	GameType      string // one of regular, progressive, ultimate
+	TimerOn       bool
+	ConfirmButton Coord
 }
 
 func (gs *GameState) AllCards() []Card {
@@ -81,7 +83,7 @@ func parseGameStateFromJson(str string) (*GameState, error) {
 	if err := json.Unmarshal([]byte(str), &gameState); err != nil {
 		return nil, err
 	}
-	fmt.Printf("\n %+v \n", gameState)
+	// fmt.Printf("\n %+v \n", gameState)
 
 	if valid, err := gameState.IsValid(); !valid {
 		return nil, err
@@ -95,5 +97,5 @@ func StateChanged(gsNew, gsOld *GameState) bool {
 }
 
 func (gs *GameState) DecisionRequired() bool {
-	return len(gs.Pull) > 0
+	return len(gs.Pull) >= 3 && gs.TimerOn
 }

@@ -1,7 +1,6 @@
 package automaton
 
 import (
-	"fmt"
 	"image/color"
 	"unsafe"
 
@@ -68,7 +67,10 @@ func ScreenCapture(hwnd w32.HWND) Bitmap {
 		uintptr(memptr),
 		uintptr(unsafe.Pointer(&bmpInfo)),
 		w32.DIB_RGB_COLORS)
-	fmt.Printf("Num lines written: %v\n", numLines)
+	// fmt.Printf("Num lines written: %v\n", numLines)
+	if numLines == 0 {
+		panic("Numlines shouldn't be zero!")
+	}
 
 	// initialize our image structure
 	var img Bitmap

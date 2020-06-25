@@ -30,7 +30,9 @@ func (w *WindowsError) Error() string {
 func PrintWindow(hwnd w32.HWND, hdc w32.HDC) bool {
 	ret, _, err := procPrintWindow.Call(
 		uintptr(hwnd), uintptr(hdc), 1)
-	fmt.Printf("PrintWindow: %v %v\n", ret, err)
+	if ret == 0 {
+		fmt.Printf("PrintWindow: %v %v\n", ret, err)
+	}
 	return ret != 0
 }
 
@@ -38,7 +40,9 @@ func GetDIBits(hdc w32.HDC, hBmp w32.HBITMAP, start uint32,
 	cLines int32, buf uintptr, bmpInfo uintptr, usage uint32) int {
 	ret, _, err := procGetDIBits.Call(
 		uintptr(hdc), uintptr(hBmp), uintptr(start), uintptr(cLines), buf, bmpInfo, uintptr(usage))
-	fmt.Printf("GetDIBits: %v %v\n", ret, err)
+	if ret == 0 {
+		fmt.Printf("GetDIBits: %v %v\n", ret, err)
+	}
 	return int(ret)
 }
 
