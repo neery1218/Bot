@@ -8,6 +8,20 @@ import (
 	"time"
 )
 
+func Capture(imageName string, gCtxt ofc.GameContext) (*ofc.GameState, error) {
+	err := gCtxt.CaptureGameState(imageName)
+	if err != nil {
+		return nil, err
+	}
+
+	gs, err := gCtxt.ParseGameStateFromImage(imageName)
+	if err != nil {
+		return nil, err
+	}
+
+	return gs, nil
+}
+
 func main() {
 	log.Printf("Starting Bot\n")
 
@@ -19,38 +33,55 @@ func main() {
 
 	for {
 		var gs *ofc.GameState
-		var timeString string
 		var err error
 
 		// take a screenshot every half second, break when we have to make a decision
 		for {
-			timeString = strconv.Itoa(int(time.Now().Unix()))
-
-			err = gCtxt.CaptureGameState(timeString)
-			if err != nil {
-				panic(err)
+			gs, err = Capture("tmp", gCtxt) // don't care about saving these
+			if err != nil {                 // gs is nil
+				log.Println("Line 42 failed.")
+				log.Println(err)
 			}
 
-			gs, err = gCtxt.ParseGameStateFromImage(timeString)
-			if err != nil {
-				panic(err)
-			}
-			if gs.DecisionRequired() {
+			if isValid, _ := gs.IsValid(); isValid && gs.DecisionRequired() {
+				// sometimes we screenshot halfway through loading all the cards on the screen.
+				// to fix that, sleep for half a second and recapture the game state
+				time.Sleep(500 * time.Millisecond)
+
+				timeString := strconv.Itoa(int(time.Now().Unix()))
+				gs, err = Capture(timeString, gCtxt)
+				if err != nil {
+					log.Fatalf("Second screenshot %v failed %v", timeString, err)
+				}
+
+				if !gs.DecisionRequired() {
+					panic("Somehow gamestate doesn't have a required decision")
+				}
 				break
 			}
 			log.Println("No Decision Required yet...")
 			time.Sleep(500 * time.Millisecond)
 		}
 
-		if !gs.DecisionRequired() {
-			panic("Somehow gamestate doesn't have a required decision")
-		}
 		log.Println("Decision needed!")
 		actions, err := gCtxt.SolveGameState(gs)
 		if err != nil {
-			panic(err)
+			log.Println("Solver failed.")
+			log.Fatal(err)
 		}
-		gCtxt.ExecuteActions(actions, gs)
-		time.Sleep(1000 * time.Millisecond)
+
+		err = gCtxt.ExecuteActions(actions, gs)
+		if err != nil {
+			log.Fatalf("ExecuteActions failed: %+v\n", err)
+		}
+
+		// make sure actions were performed correctly and press the confirm button.
+		err = gCtxt.ConfirmActions(actions)
+		if err != nil {
+			log.Println("Confirm Actions failed.")
+			log.Fatal(err)
+		}
+
+		time.Sleep(500 * time.Millisecond)
 	}
 }

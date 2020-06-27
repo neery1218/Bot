@@ -43,6 +43,10 @@ func (gs *GameState) AllCards() []Card {
 }
 
 func (gameState *GameState) IsValid() (bool, error) {
+	if gameState == nil {
+		return false, &OfcError{"GameState is nil!"}
+	}
+
 	// MyHand
 	if !gameState.MyHand.IsValid() {
 		return false, &OfcError{fmt.Sprintf("MyHand is invalid! %+v", gameState.MyHand)}
@@ -97,5 +101,6 @@ func StateChanged(gsNew, gsOld *GameState) bool {
 }
 
 func (gs *GameState) DecisionRequired() bool {
-	return len(gs.Pull) >= 3 && gs.TimerOn
+	// combination of all three is required (aces fantasy)
+	return len(gs.Pull) >= 3 && gs.TimerOn && gs.MyHand.NumCards() < 13
 }

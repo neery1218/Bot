@@ -50,6 +50,11 @@ func (gCtxt *GameContext) CaptureGameState(imageName string) error {
 	return nil
 }
 
+func (gCtxt *GameContext) DiscardBitmapFile(imageName string) error {
+	err := os.Remove(gCtxt.ScreenShotDir + "\\" + imageName + ".bmp")
+	return err
+}
+
 func (gCtxt *GameContext) ParseGameStateFromImage(imageName string) (*GameState, error) {
 	u, err := url.Parse(gCtxt.ImageServerHost)
 	if err != nil {
@@ -89,7 +94,7 @@ func (gCtxt *GameContext) SolveGameState(gs *GameState) ([]Action, error) {
 
 	// build query for the OfcSolver
 	q := u.Query()
-	q.Set("type", "progressive")
+	q.Set("type", gs.GameType)
 	// fmt.Println(formatHand(&gs.MyHand))
 	q.Set("my_hand", formatHand(&gs.MyHand))
 
@@ -98,8 +103,8 @@ func (gCtxt *GameContext) SolveGameState(gs *GameState) ([]Action, error) {
 			q.Add("other_hand", formatHand(&otherHand))
 		}
 	}
-	q.Set("n_solves", "700")
-	q.Set("n_decision_solves", "25")
+	q.Set("n_solves", "500")
+	q.Set("n_decision_solves", "45")
 	q.Set("pull", formatCardArray(gs.Pull))
 
 	if len(gs.DeadCards) > 0 {
@@ -224,7 +229,7 @@ func (gCtxt *GameContext) ExecuteActions(actions []Action, gs *GameState) error 
 		automaton.ClickDown()
 		automaton.MoveMouse(gCtxt.Hwnd, slotCoords.X, slotCoords.Y)
 		automaton.ClickUp()
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(650 * time.Millisecond)
 	}
 
 	return nil
@@ -256,4 +261,34 @@ func (gCtxt *GameContext) findCardCoord(action Action, gs *GameState, isFantasy 
 	}
 
 	return nil, &OfcError{"Couldn't find new card in image tmp"}
+}
+
+func (gCtxt *GameContext) ConfirmActions(actions []Action) error {
+	err := gCtxt.CaptureGameState("confirmActions")
+	if err != nil {
+		return err
+	}
+	gs, err := gCtxt.ParseGameStateFromImage("confirmActions")
+	if err != nil {
+		return err
+	}
+
+	myHand := gs.MyHand
+	for _, action := range actions {
+		// make sure the card is in the correct position
+		pos, exists := myHand.FindCard(action.Card)
+		if !exists || pos != action.Pos {
+			return &OfcError{fmt.Sprintf("Actions %+v was not executed correctly! Hand %+v", action, myHand)}
+		}
+	}
+
+	automaton.MoveMouse(gCtxt.Hwnd, gs.ConfirmButton.X, gs.ConfirmButton.Y)
+
+	if len(actions) < 10 { // don't confirm for fantasy
+		automaton.ClickDown()
+		automaton.ClickUp()
+	}
+	// TODO: actually press the confirm button
+
+	return nil
 }
