@@ -60,7 +60,7 @@ func main() {
 				break
 			}
 			log.Println("No Decision Required yet...")
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(200 * time.Millisecond)
 		}
 
 		log.Println("Decision needed!")
@@ -82,6 +82,6 @@ func main() {
 			log.Fatal(err)
 		}
 
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(200 * time.Millisecond)
 	}
 }

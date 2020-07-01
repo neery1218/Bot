@@ -284,10 +284,12 @@ func (gCtxt *GameContext) ConfirmActions(actions []Action) error {
 
 	automaton.MoveMouse(gCtxt.Hwnd, gs.ConfirmButton.X, gs.ConfirmButton.Y)
 
-	if len(actions) < 10 { // don't confirm for fantasy
-		automaton.ClickDown()
-		automaton.ClickUp()
+	if len(actions) >= 13 {
+		log.Printf("Sleeping 5 seconds before confirming fantasy.")
+		time.Sleep(5000 * time.Millisecond)
 	}
+	automaton.ClickDown()
+	automaton.ClickUp()
 	// TODO: actually press the confirm button
 
 	return nil
