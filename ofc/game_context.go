@@ -31,9 +31,41 @@ type GameContextError struct {
 func (e *GameContextError) Error() string {
 	return fmt.Sprintf("GameContextError: %s", e.Msg)
 }
+
+func (gCtxt *GameContext) CaptureWithRetry(imageName string) (*GameState, error) {
+	// retries 10 times, then gives up
+	for i := 1; i <= 10; i++ {
+		gs, err := gCtxt.Capture(imageName)
+		if err == nil {
+			return gs, err
+		}
+		log.Println(err)
+		time.Sleep(200 * time.Millisecond)
+	}
+
+	return nil, &GameContextError{"Capture Failed."}
+}
+
+func (gCtxt *GameContext) Capture(imageName string) (*GameState, error) {
+	err := gCtxt.CaptureGameState(imageName)
+	if err != nil {
+		return nil, err
+	}
+
+	gs, err := gCtxt.ParseGameStateFromImage(imageName)
+	if err != nil {
+		return nil, err
+	}
+
+	return gs, nil
+}
+
 func (gCtxt *GameContext) CaptureGameState(imageName string) error {
 	// get screenshot
-	img := automaton.ScreenCapture(gCtxt.Hwnd)
+	img, err := automaton.ScreenCapture(gCtxt.Hwnd)
+	if err != nil {
+		return err
+	}
 
 	// save image to file
 	f, err := os.Create(gCtxt.ScreenShotDir + "\\" + imageName + ".bmp")
@@ -42,7 +74,7 @@ func (gCtxt *GameContext) CaptureGameState(imageName string) error {
 	}
 
 	// save image to file
-	err = bmp.Encode(f, &img) // *Bitmap implements Image, not Bitmap!
+	err = bmp.Encode(f, img) // *Bitmap implements Image, not Bitmap!
 	if err != nil {
 		return err
 	}
@@ -244,11 +276,7 @@ func (gCtxt *GameContext) findCardCoord(action Action, gs *GameState, isFantasy 
 	// positions change. So after every executed action, we have to re-identify
 	// the card positions.
 	timeString := strconv.Itoa(int(time.Now().Unix()))
-	err := gCtxt.CaptureGameState(timeString)
-	if err != nil {
-		return nil, err
-	}
-	newGs, err := gCtxt.ParseGameStateFromImage(timeString)
+	newGs, err := gCtxt.CaptureWithRetry(timeString)
 	if err != nil {
 		return nil, err
 	}
@@ -264,11 +292,7 @@ func (gCtxt *GameContext) findCardCoord(action Action, gs *GameState, isFantasy 
 }
 
 func (gCtxt *GameContext) ConfirmActions(actions []Action) error {
-	err := gCtxt.CaptureGameState("confirmActions")
-	if err != nil {
-		return err
-	}
-	gs, err := gCtxt.ParseGameStateFromImage("confirmActions")
+	gs, err := gCtxt.CaptureWithRetry("confirmActions")
 	if err != nil {
 		return err
 	}

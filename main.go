@@ -8,20 +8,6 @@ import (
 	"time"
 )
 
-func Capture(imageName string, gCtxt ofc.GameContext) (*ofc.GameState, error) {
-	err := gCtxt.CaptureGameState(imageName)
-	if err != nil {
-		return nil, err
-	}
-
-	gs, err := gCtxt.ParseGameStateFromImage(imageName)
-	if err != nil {
-		return nil, err
-	}
-
-	return gs, nil
-}
-
 func main() {
 	log.Printf("Starting Bot\n")
 
@@ -37,8 +23,8 @@ func main() {
 
 		// take a screenshot every half second, break when we have to make a decision
 		for {
-			gs, err = Capture("tmp", gCtxt) // don't care about saving these
-			if err != nil {                 // gs is nil
+			gs, err = gCtxt.Capture("tmp") // don't care about saving these
+			if err != nil {                // gs is nil
 				log.Println("Line 42 failed.")
 				log.Println(err)
 			}
@@ -49,7 +35,7 @@ func main() {
 				time.Sleep(500 * time.Millisecond)
 
 				timeString := strconv.Itoa(int(time.Now().Unix()))
-				gs, err = Capture(timeString, gCtxt)
+				gs, err = gCtxt.CaptureWithRetry(timeString)
 				if err != nil {
 					log.Fatalf("Second screenshot %v failed %v", timeString, err)
 				}

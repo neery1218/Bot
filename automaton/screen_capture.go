@@ -1,16 +1,28 @@
 package automaton
 
 import (
+	"fmt"
 	"image/color"
 	"unsafe"
 
 	"github.com/JamesHovious/w32"
 )
 
-func ScreenCapture(hwnd w32.HWND) Bitmap {
+type ScreenCaptureError struct {
+	Msg string
+}
+
+func (e *ScreenCaptureError) Error() string {
+	return fmt.Sprintf("ScreenCaptureError: %s", e.Msg)
+}
+
+func ScreenCapture(hwnd w32.HWND) (*Bitmap, error) {
 
 	// get relative coordinates of window (used to compute size)
-	rect := w32.GetClientRect(hwnd)
+	rect, ok := w32.GetClientRect(hwnd)
+	if !ok {
+		return nil, &ScreenCaptureError{"GetClientRect failed!"}
+	}
 	// fmt.Printf("left right top down %v %v %v %v\n", rect.Left, rect.Right, rect.Top, rect.Bottom)
 
 	// dc = device context. idk what these are for
@@ -27,12 +39,12 @@ func ScreenCapture(hwnd w32.HWND) Bitmap {
 	var dib w32.DIBSECTION
 	ret := w32.GetObject(w32.HGDIOBJ(hbmp), unsafe.Sizeof(dib), unsafe.Pointer(&dib))
 	if ret == 0 { // ret holds #bytes written to dib
-		panic("Getting object failed!")
+		return nil, &ScreenCaptureError{"Getting object failed!"}
 	}
 
 	// fmt.Printf("%+v\n", dib)
 	if dib.DsBm.BmBitsPixel != 32 {
-		panic("assertion failed. bits per pixel should be 32")
+		return nil, &ScreenCaptureError{"assertion failed, bits per pixel should be 32."}
 	}
 
 	// initialize BITMAPINFO struct with dimension values. this is needed to find the rgb values
@@ -69,7 +81,7 @@ func ScreenCapture(hwnd w32.HWND) Bitmap {
 		w32.DIB_RGB_COLORS)
 	// fmt.Printf("Num lines written: %v\n", numLines)
 	if numLines == 0 {
-		panic("Numlines shouldn't be zero!")
+		return nil, &ScreenCaptureError{"Numlines shouldn't be zero!"}
 	}
 
 	// initialize our image structure
@@ -96,5 +108,5 @@ func ScreenCapture(hwnd w32.HWND) Bitmap {
 		head += 4
 	}
 
-	return img
+	return &img, nil
 }
